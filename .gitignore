@@ -1,0 +1,16 @@
+# Flutter
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# iOS/Android build outputs
+ios/Pods/
+android/.gradle/
+android/app/build/
