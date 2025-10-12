@@ -65,6 +65,3 @@ The app launches the camera and automatically recognizes people based on stored 
 - [Firebase Storage](https://firebase.google.com/products/storage)  
 - [MongoDB](https://www.mongodb.com/)
 
-
-## 📁 Project Structure
-
