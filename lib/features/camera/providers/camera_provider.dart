@@ -239,6 +239,8 @@ class CameraNotifier extends Notifier<CameraState> {
     try {
       final controller = state.controller;
       if (controller != null) {
+        // Immediately clear controller from state so UI stops building preview
+        state = state.copyWith(controller: null, isInitialized: false);
         // Stop image stream if active
         if (controller.value.isStreamingImages) {
           await controller.stopImageStream();
@@ -277,6 +279,29 @@ class CameraNotifier extends Notifier<CameraState> {
       }
     } catch (e) {
       debugPrint('Error resuming camera: $e');
+    }
+  }
+
+  // Pause/Resume camera preview to avoid buffer pressure during capture/navigation
+  Future<void> pausePreview() async {
+    try {
+      final controller = state.controller;
+      if (controller != null && controller.value.isInitialized && !controller.value.isPreviewPaused) {
+        await controller.pausePreview();
+      }
+    } catch (e) {
+      debugPrint('Error pausing preview: $e');
+    }
+  }
+
+  Future<void> resumePreview() async {
+    try {
+      final controller = state.controller;
+      if (controller != null && controller.value.isInitialized && controller.value.isPreviewPaused) {
+        await controller.resumePreview();
+      }
+    } catch (e) {
+      debugPrint('Error resuming preview: $e');
     }
   }
 

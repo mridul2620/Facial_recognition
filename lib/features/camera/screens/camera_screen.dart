@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -86,6 +86,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       return;
     }
 
+    // Pause preview to avoid buffer pressure while capturing or navigating
+    await ref.read(cameraProvider.notifier).pausePreview();
+
     // Show loading indicator
     showDialog(
       context: context,
@@ -113,14 +116,22 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             ),
           ),
         );
+
+        // Resume preview when we return from preview screen
+        if (mounted && !_isDisposed) {
+          await ref.read(cameraProvider.notifier).resumePreview();
+        }
       } else if (mounted && !_isDisposed) {
         _showError('Failed to capture image');
+        // Try resuming preview in case of failure
+        await ref.read(cameraProvider.notifier).resumePreview();
       }
     } catch (e) {
       // Dismiss loading
       if (mounted && !_isDisposed) {
         Navigator.of(context).pop();
         _showError('Error capturing image: $e');
+        await ref.read(cameraProvider.notifier).resumePreview();
       }
     }
   }

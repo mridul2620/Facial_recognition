@@ -1,6 +1,8 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:io';
+import 'package:facial_recognition/features/recognition/screens/recognition_result_screen.dart';
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
 import '../../registration/screens/registration_screen.dart';
 
 class ImagePreviewScreen extends StatelessWidget {
@@ -152,25 +154,24 @@ padding: const EdgeInsets.symmetric(vertical: 16),
 );
 }
 void _handleProceed(BuildContext context) {
-if (mode == 'register') {
-// Navigate to registration screen
-Navigator.of(context).push(
-MaterialPageRoute(
-builder: (context) => RegistrationScreen(
-imageFile: imageFile,
-),
-),
-);
-} else {
-// Navigate to recognition process (coming in next step)
-ScaffoldMessenger.of(context).showSnackBar(
-const SnackBar(
-content: Text('Recognition process - Coming in next step'),
-backgroundColor: AppColors.success,
-behavior: SnackBarBehavior.floating,
-),
-);
-Navigator.of(context).popUntil((route) => route.isFirst);
-}
+  if (mode == 'register') {
+    // Navigate to registration screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => RegistrationScreen(
+          imageFile: imageFile,
+        ),
+      ),
+    );
+  } else {
+    // Navigate to recognition result screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => RecognitionResultScreen(
+          imageFile: imageFile,
+        ),
+      ),
+    );
+  }
 }
 }
