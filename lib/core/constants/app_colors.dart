@@ -45,4 +45,17 @@ class AppColors {
       Color(0xFF16213E),
     ],
   );
+
+  static const LinearGradient accentGradient = LinearGradient(
+    colors: [Color(0xFFFF6584), Color(0xFFFF8BA7)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // ADD THIS TOO (for manage users button):
+  static const LinearGradient purpleGradient = LinearGradient(
+    colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 }

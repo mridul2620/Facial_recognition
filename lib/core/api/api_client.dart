@@ -124,6 +124,66 @@ class ApiClient {
     }
   }
 
+  // Get all users
+Future<Response> getAllUsers({int skip = 0, int limit = 100}) async {
+  try {
+    final response = await _dio.get(
+      '/users',
+      queryParameters: {
+        'skip': skip,
+        'limit': limit,
+      },
+    );
+    return response;
+  } catch (e) {
+    rethrow;
+  }
+}
+
+// Get user by ID
+Future<Response> getUserById(String userId) async {
+  try {
+    final response = await _dio.get('/users/$userId');
+    return response;
+  } catch (e) {
+    rethrow;
+  }
+}
+
+// Update user
+Future<Response> updateUser(String userId, Map<String, dynamic> data) async {
+  try {
+    final response = await _dio.put(
+      '/users/$userId',
+      data: data,
+    );
+    return response;
+  } catch (e) {
+    rethrow;
+  }
+}
+
+// Delete user
+Future<Response> deleteUser(String userId) async {
+  try {
+    final response = await _dio.delete('/users/$userId');
+    return response;
+  } catch (e) {
+    rethrow;
+  }
+}
+
+// Get statistics
+Future<Response> getStats() async {
+  try {
+    final response = await _dio.get('/stats');
+    return response;
+  } catch (e) {
+    rethrow;
+  }
+}
+
+
   // Error Handler
   ApiException _handleError(DioException error) {
     switch (error.type) {
