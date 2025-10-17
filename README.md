@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Facial Recognition App (Flutter + FastAPI)
 
 This project is a **face recognition mobile app** built with **Flutter** for the frontend and **FastAPI (Python)** for the backend.  
