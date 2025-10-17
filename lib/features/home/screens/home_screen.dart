@@ -1,196 +1,236 @@
-// ignore_for_file: deprecated_member_use
-import 'package:facial_recognition/features/camera/screens/camera_screen.dart';
-import '../../users/screens/users_list_screen.dart';
+import 'package:facial_recognition/features/stats/models/statistics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
-import '../widgets/header_section.dart';
+import '../../camera/screens/camera_screen.dart';
+import '../../users/screens/users_list_screen.dart';
+import '../../stats/providers/stats_provider.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Load stats when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(statsProvider.notifier).loadStats();
+    });
+  }
+
+  Future<void> _refreshStats() async {
+    await ref.read(statsProvider.notifier).loadStats();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final width = size.width;
-    final height = size.height;
-    
-    // Minimum height threshold (6 inches ≈ 640 logical pixels for most phones)
-    const minHeightThreshold = 640.0;
-    final enableScroll = height < minHeightThreshold;
-    
-    // Responsive padding based on screen width
-    final horizontalPadding = width * 0.06; // 6% of screen width
-    final verticalSpacing = enableScroll ? height * 0.025 : height * 0.02;
-    
+    final statsState = ref.watch(statsProvider);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
-          child: enableScroll
-              ? _buildScrollableContent(context, horizontalPadding, verticalSpacing)
-              : _buildFitContent(context, horizontalPadding, verticalSpacing),
+          child: RefreshIndicator(
+            onRefresh: _refreshStats,
+            color: AppColors.primary,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
+
+                    // Header
+                    _buildHeader(),
+
+                    const SizedBox(height: 40),
+
+                    // Action Buttons
+                    _buildActionButtons(context),
+
+                    const SizedBox(height: 32),
+
+                    // Quick Stats Section
+                    _buildQuickStats(statsState),
+
+                    const SizedBox(height: 32),
+
+                    // System Status
+                    _buildSystemStatus(statsState),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildScrollableContent(BuildContext context, double horizontalPadding, double verticalSpacing) {
-    // ignore: unused_local_variable
-    final width = MediaQuery.of(context).size.width;
-    
-    return CustomScrollView(
-      slivers: [
-        const SliverToBoxAdapter(
-          child: HeaderSection(),
-        ),
-        SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-          sliver: SliverToBoxAdapter(
-            child: _buildMainContent(context, verticalSpacing),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFitContent(BuildContext context, double horizontalPadding, double verticalSpacing) {
-    return Column(
-      children: [
-        const HeaderSection(),
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-            child: _buildMainContent(context, verticalSpacing),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMainContent(BuildContext context, double verticalSpacing) {
-    final width = MediaQuery.of(context).size.width;
-    final height = MediaQuery.of(context).size.height;
-    
+  Widget _buildHeader() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        SizedBox(height: verticalSpacing),
-
-        // Title
         Text(
-          'What would you like to do?',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: AppColors.textSecondary,
-                fontSize: width * 0.055,
+          'Face Recognition',
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
         ),
-
-        SizedBox(height: verticalSpacing * 0.5),
-
-        // Action Buttons
-        Column(
-          children: [
-            _buildActionButton(
-              context: context,
-              icon: Icons.person_add_rounded,
-              label: 'Register New Face',
-              gradient: AppColors.primaryGradient as LinearGradient,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const CameraScreen(mode: 'register'),
-                  ),
-                );
-              },
-            ),
-            SizedBox(height: height * 0.015),
-            _buildActionButton(
-              context: context,
-              icon: Icons.face_rounded,
-              label: 'Recognize Face',
-              gradient: AppColors.accentGradient,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const CameraScreen(mode: 'recognize'),
-                  ),
-                );
-              },
-            ),
-            SizedBox(height: height * 0.015),
-            _buildActionButton(
-              context: context,
-              icon: Icons.people_rounded,
-              label: 'Manage Users',
-              gradient: AppColors.purpleGradient,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const UsersListScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
+        const SizedBox(height: 8),
+        Text(
+          'Secure. Fast. Accurate.',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppColors.textSecondary,
+              ),
         ),
-
-        SizedBox(height: verticalSpacing * 0.5),
-
-        // Stats Section
-        _buildStatsSection(context),
-
-        SizedBox(height: verticalSpacing),
       ],
     );
   }
 
-  Widget _buildStatsSection(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final width = size.width;
-    final height = size.height;
-    
-    return Container(
-      padding: EdgeInsets.all(width * 0.06),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(width * 0.05),
-        border: Border.all(
-          color: AppColors.primary.withOpacity(0.1),
-          width: 1,
+  Widget _buildQuickStats(StatsState statsState) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Quick Stats',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            if (statsState.isLoading)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary,
+                ),
+              ),
+          ],
         ),
+        const SizedBox(height: 16),
+        if (statsState.errorMessage != null)
+          _buildErrorCard(statsState.errorMessage!)
+        else if (statsState.statistics != null)
+          _buildStatsGrid(statsState.statistics!)
+        else
+          _buildStatsGrid(null), // Show placeholder
+      ],
+    );
+  }
+
+  Widget _buildStatsGrid(Statistics? stats) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 1.3,
+      children: [
+        _buildStatCard(
+          icon: Icons.people_rounded,
+          label: 'Total Users',
+          value: stats?.totalUsers.toString() ?? '--',
+          color: AppColors.primary,
+        ),
+        _buildStatCard(
+          icon: Icons.check_circle_rounded,
+          label: 'Active Users',
+          value: stats?.activeUsers.toString() ?? '--',
+          color: AppColors.success,
+        ),
+        _buildStatCard(
+          icon: Icons.fingerprint_rounded,
+          label: 'Face Embeddings',
+          value: stats?.totalEmbeddings.toString() ?? '--',
+          color: AppColors.accent,
+        ),
+        _buildStatCard(
+          icon: Icons.analytics_rounded,
+          label: 'Average Confidence',
+          value: stats != null
+              ? '${(stats.avgConfidence * 100).toStringAsFixed(0)}%'
+              : '--',
+          color: const Color(0xFF667EEA),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.8),
+            color.withOpacity(0.6),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'Quick Stats',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontSize: width * 0.055,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 24,
             ),
           ),
-          SizedBox(height: height * 0.025),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildStatItem(
-                context,
-                icon: Icons.people_rounded,
-                label: 'Registered',
-                value: '0',
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              Container(
-                width: 1,
-                height: height * 0.05,
-                color: AppColors.primary.withOpacity(0.2),
-              ),
-              _buildStatItem(
-                context,
-                icon: Icons.history_rounded,
-                label: 'Recognitions',
-                value: '0',
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -199,34 +239,85 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    final width = MediaQuery.of(context).size.width;
-    
+  Widget _buildErrorCard(String error) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.error.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.error.withOpacity(0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline,
+            color: AppColors.error,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              error,
+              style: const TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          color: AppColors.primary,
-          size: width * 0.08, // Responsive icon size
-        ),
-        const SizedBox(height: 8),
         Text(
-          value,
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            fontSize: width * 0.08,
-          ),
+          'Actions',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontSize: width * 0.035,
-          ),
+        const SizedBox(height: 16),
+        _buildActionButton(
+          context: context,
+          icon: Icons.person_add_rounded,
+          label: 'Register New Face',
+          gradient: AppColors.primaryGradient as LinearGradient,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const CameraScreen(mode: 'register'),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        _buildActionButton(
+          context: context,
+          icon: Icons.face_rounded,
+          label: 'Recognize Face',
+          gradient: AppColors.accentGradient,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const CameraScreen(mode: 'recognize'),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        _buildActionButton(
+          context: context,
+          icon: Icons.people_rounded,
+          label: 'Manage Users',
+          gradient: AppColors.purpleGradient,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const UsersListScreen(),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -239,14 +330,10 @@ class HomeScreen extends StatelessWidget {
     required LinearGradient gradient,
     required VoidCallback onTap,
   }) {
-    final size = MediaQuery.of(context).size;
-    final width = size.width;
-    final height = size.height;
-    
     return Container(
       decoration: BoxDecoration(
         gradient: gradient,
-        borderRadius: BorderRadius.circular(width * 0.05),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: gradient.colors.first.withOpacity(0.3),
@@ -259,16 +346,13 @@ class HomeScreen extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(width * 0.05),
+          borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: height * 0.025,
-              horizontal: width * 0.06,
-            ),
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
             child: Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(width * 0.03),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
                     shape: BoxShape.circle,
@@ -276,29 +360,76 @@ class HomeScreen extends StatelessWidget {
                   child: Icon(
                     icon,
                     color: Colors.white,
-                    size: width * 0.07,
+                    size: 28,
                   ),
                 ),
-                SizedBox(width: width * 0.04),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     label,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
-                      fontSize: width * 0.045,
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.arrow_forward_ios_rounded,
                   color: Colors.white,
-                  size: width * 0.05,
+                  size: 20,
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSystemStatus(StatsState statsState) {
+    final isHealthy = statsState.statistics != null;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: isHealthy ? AppColors.success : AppColors.error,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: isHealthy ? AppColors.success : AppColors.error,
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            isHealthy ? 'System Online' : 'System Offline',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: _refreshStats,
+            icon: const Icon(Icons.refresh_rounded),
+            color: AppColors.primary,
+          ),
+        ],
       ),
     );
   }
